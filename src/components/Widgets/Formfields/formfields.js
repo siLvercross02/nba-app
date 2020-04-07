@@ -9,7 +9,7 @@ const FormFields = ({formdata,change,id}) => {
         if(formdata.validation && !formdata.valid) {
             errorMessage = (
                 <div className="labelError">
-                    {formdata.validatioMessage}
+                    {formdata.validationMessage}
                 </div>
             )
         }

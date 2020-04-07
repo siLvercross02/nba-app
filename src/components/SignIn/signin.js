@@ -1,6 +1,7 @@
 import React , { Component } from 'react';
 import './signin.css';
 import FormFields from '../Widgets/Formfields/formfields';
+import { firebase } from '../../firebase';
 
 class SignIn extends Component {
 
@@ -55,12 +56,12 @@ class SignIn extends Component {
             let validData = this.validate(newElement);
             newElement.valid = validData[0];
             newElement.validationMessage = validData[1];
+            console.log(newFormData)
 
         }
         newElement.touched = element.blur;
         newFormData[element.id] = newElement ;
 
-        console.log(newFormData)
 
         this.setState({
             formdata:newFormData
@@ -70,7 +71,7 @@ class SignIn extends Component {
     validate = (element) => {
         let error = [true, ''];
 
-        if(element.validation.required) {
+        if(element.validation.email) {
             const valid = /\S+@\S+\.\S+/.test(element.value);
             const message = `${!valid ? 'Must be a Valid Email': ''}`;
             error = !valid ? [valid, message]: error;
@@ -90,10 +91,76 @@ class SignIn extends Component {
         return error;
     }
 
+    submitForm = (event,type) => {
+        event.preventDefault();
+
+        if(type !== null) { 
+            let dataToSubmit = {};
+            let formIsValid = true;
+
+            for(let key in this.state.formdata) {
+                dataToSubmit[key] = this.state.formdata[key].value;
+            }
+            for(let key in this.state.formdata) {
+                formIsValid = this.state.formdata[key].valid && formIsValid;
+            }
+
+            if(formIsValid) {
+               this.setState({
+                   loading: true,
+                   registerError: ''
+               })
+               if(type) {
+                    firebase.auth()
+                    .signInWithEmailAndPassword(
+                        dataToSubmit.email,
+                        dataToSubmit.password
+                    )  
+                    .then(()=> {
+                        this.props.history.push('/')
+                    }).catch( error => {
+                        this.setState({
+                            loading:false,
+                            registerError:error.message
+                        })
+                    })
+
+               } else {
+                    firebase.auth()
+                    .createUserWithEmailAndPassword(dataToSubmit.email, dataToSubmit.password)
+                    .then(()=> {
+                        this.props.history.push('/')
+                    }).catch( error => {
+                        this.setState({
+                            loading:false,
+                            registerError:error.message
+                        })
+                    })
+               }
+            }
+        }
+    }
+
+    submitButton = () => (
+        this.state.loading ?
+            'Loading...'
+            :
+            <div>
+                <button onClick={(event) => this.submitForm(event, false)}>Register Now</button>
+                 <button onClick={(event) => this.submitForm(event, true)}>Log In</button>
+            </div>
+    )
+
+    showError = () => (
+        this.state.registerError !==''?
+            <div className="error">{this.state.registerError}</div>
+            : ''
+    )
+
     render() {
         return(
             <div className="logContainer">
-                <form>
+                <form onSubmit={(event)=>this.submitForm(event,null)}>
                     <h2>Register / Log In</h2>
                     <FormFields
                         id={'email'}
@@ -105,6 +172,8 @@ class SignIn extends Component {
                         formdata={this.state.formdata.password}
                         change={(element) => this.updateForm(element)}
                     />
+                    {this.submitButton()}
+                    {this.showError()}
                 </form>
             </div>
         )
