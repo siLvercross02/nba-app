@@ -19,7 +19,7 @@ class SignIn extends Component {
                 },
                 validation: {
                     required:true,
-                    password:true
+                    email:true
                 },
                 valid:false,
                 touched:false,
